@@ -5,10 +5,21 @@ services:
     build: .
     container_name: github-actions-runner
     restart: unless-stopped
+    # The GITHUB_REPO is the url of the repository seen in the browser instead of the git clone url
+    # The GITHUB_RUNNER_TOKEN is the token generated when adding a runner to the repo instead of a PAT
     environment:
       - RUNNER_NAME=${RUNNER_NAME}
       - REPO_URL=https://github.com/${GITHUB_REPO}
       - GITHUB_RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./runner_work:/runner_work # Bind mount for persistent runner data
+      - docker_sock:/var/run/docker.sock
+      - runner_work:/runner_work # Bind mount for persistent runner data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+volumes:
+  docker_sock:
+  runner_work:

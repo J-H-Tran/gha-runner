@@ -5,8 +5,8 @@ ENV RUNNER_VERSION=2.311.0
 ENV RUNNER_ARCH=x64
 ENV RUNNER_PLATFORM=linux
 
-# Install necessary packages as root user
-RUN apt-get update && apt-get install -y \
+# Install necessary packages as root, start as root user by default
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     jq \
     git \
@@ -27,18 +27,16 @@ RUN mkdir -p /actions-runner \
     && tar xzf ./actions-runner-${RUNNER_PLATFORM}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
     && rm actions-runner-${RUNNER_PLATFORM}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz
 
-# Create a non-root user
-RUN useradd -m runner
-
-# Change ownership of the /actions-runner directory to the non-root user
-RUN chown -R runner:runner /actions-runner
+# Create a non-root user and change ownership of the /actions-runner directory
+RUN useradd -m user0001 \
+    && chown -R user0001:user0001 /actions-runner
 
 # Copy start.sh and change its permissions as root
 COPY start.sh /actions-runner/start.sh
 RUN chmod +x /actions-runner/start.sh
 
 # Switch to the non-root user
-USER runner
+USER user0001
 
 WORKDIR /actions-runner
 
