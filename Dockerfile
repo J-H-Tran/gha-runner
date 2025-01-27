@@ -1,12 +1,7 @@
-# This file contains the instructions on how to build the Docker image
-FROM ubuntu:20.04
+FROM ubuntu
 
-ENV RUNNER_VERSION=2.311.0
-ENV RUNNER_ARCH=x64
-ENV RUNNER_PLATFORM=linux
-
-# Install necessary packages as root, start as root user by default
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install required tools
+RUN apt-get update && apt-get install -y \
     curl \
     jq \
     git \
@@ -14,30 +9,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     gcc-multilib \
     g++-multilib \
-    libicu66 \
+    libicu-dev \
     libssl-dev \
     libkrb5-dev \
     zlib1g \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Create the /actions-runner directory and download the GitHub runner as root
-RUN mkdir -p /actions-runner \
-    && cd /actions-runner \
-    && curl -O -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-${RUNNER_PLATFORM}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
-    && tar xzf ./actions-runner-${RUNNER_PLATFORM}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
-    && rm actions-runner-${RUNNER_PLATFORM}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz
+# Add a non-root user
+RUN useradd -m runner && echo "runner:runner" | chpasswd && usermod -aG sudo runner
 
-# Create a non-root user and change ownership of the /actions-runner directory
-RUN useradd -m user0001 \
-    && chown -R user0001:user0001 /actions-runner
+# Set up the runner
+WORKDIR /home/runner
+RUN curl -o actions-runner.tar.gz -L https://github.com/actions/runner/releases/download/v2.308.0/actions-runner-linux-x64-2.308.0.tar.gz && \
+    tar xzf actions-runner.tar.gz && \
+    ./bin/installdependencies.sh && \
+    rm actions-runner.tar.gz
 
-# Copy start.sh and change its permissions as root
-COPY start.sh /actions-runner/start.sh
-RUN chmod +x /actions-runner/start.sh
+# Copy entrypoint script (if you create one)
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Switch to the non-root user
-USER user0001
+# Switch to the runner user
+USER runner
 
-WORKDIR /actions-runner
-
-ENTRYPOINT ["./start.sh"]
+# Default entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
