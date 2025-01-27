@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-runner
+  template:
+    metadata:
+      labels:
+        app: github-runner
+    spec:
+      containers:
+        - name: github-runner
+          image: your-docker-image:latest
+          env:
+            - name: RUNNER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: github-runner-secrets
+                  key: RUNNER_NAME
+            - name: GITHUB_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: github-runner-secrets
+                  key: GITHUB_REPO
+            - name: GITHUB_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-runner-secrets
+                  key: GITHUB_RUNNER_TOKEN
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: runner-work
+              mountPath: /runner_work
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: runner-work
+          persistentVolumeClaim:
+            claimName: runner-work-pvc
