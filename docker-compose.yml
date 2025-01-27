@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  github-runner:
+    build: .
+    container_name: github-actions-runner
+    restart: unless-stopped
+    environment:
+      - RUNNER_NAME=${RUNNER_NAME}
+      - REPO_URL=https://github.com/${GITHUB_REPO}
+      - GITHUB_RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner_work:/runner_work # Bind mount for persistent runner data
