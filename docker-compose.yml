@@ -1,3 +1,4 @@
+# docker-compose is used to define and run multi-container Docker applications
 version: '3.8'
 services:
   github-runner:
